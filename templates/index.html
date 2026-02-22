@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSE Image Bulk Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="panel hero">
+      <div>
+        <p class="eyebrow">MSE_SORA</p>
+        <h1>Bulk-run image generations from image + prompt combinations</h1>
+        <p class="lede">
+          Upload multiple pictures and enter one prompt per line. The app creates the cartesian product:
+          every image runs against every prompt.
+        </p>
+      </div>
+      <div class="formula">
+        <div>Pictures × Prompts = Jobs</div>
+        <code>Picture1 + Prompt1, Prompt2, Prompt3 ...</code>
+      </div>
+    </section>
+
+    <section class="panel">
+      <form id="batch-form">
+        <div class="grid">
+          <label class="field field--wide">
+            <span>Pictures</span>
+            <input id="images" name="images" type="file" accept="image/*" multiple required>
+            <small>Select multiple images.</small>
+          </label>
+
+          <label class="field field--wide">
+            <span>Prompts (one per line)</span>
+            <textarea id="prompts_text" name="prompts_text" rows="8" placeholder="Prompt 1&#10;Prompt 2&#10;Prompt 3" required></textarea>
+            <small>Blank lines are ignored.</small>
+          </label>
+
+          <label class="field">
+            <span>Model</span>
+            <input id="model" name="model" type="text" value="{{ default_model }}">
+          </label>
+
+          <label class="field">
+            <span>Size</span>
+            <input id="size" name="size" type="text" value="1024x1024">
+          </label>
+
+          <label class="field">
+            <span>Quality</span>
+            <select id="quality" name="quality">
+              <option value="auto">auto</option>
+              <option value="low">low</option>
+              <option value="medium" selected>medium</option>
+              <option value="high">high</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Output Format</span>
+            <select id="output_format" name="output_format">
+              <option value="png" selected>png</option>
+              <option value="webp">webp</option>
+              <option value="jpeg">jpeg</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Concurrency</span>
+            <input id="concurrency" name="concurrency" type="number" min="1" max="10" step="1" value="1">
+          </label>
+        </div>
+
+        <div class="summary" id="combination-summary">0 pictures × 0 prompts = 0 jobs</div>
+
+        <div class="actions">
+          <button type="submit" id="submit-btn">Run Batch</button>
+          <div id="submit-status" class="muted"></div>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="results-panel" hidden>
+      <div class="results-head">
+        <div>
+          <p class="eyebrow">Batch</p>
+          <h2 id="batch-id">-</h2>
+        </div>
+        <div class="counts" id="batch-counts"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Image</th>
+              <th>Prompt</th>
+              <th>Status</th>
+              <th>API Status</th>
+              <th>Preview</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
