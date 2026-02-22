@@ -2,6 +2,7 @@ import asyncio
 import base64
 import mimetypes
 import os
+import re
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -259,6 +260,41 @@ def _sanitize_prompts(prompts_text: str) -> list[str]:
     return [line.strip() for line in prompts_text.splitlines() if line.strip()]
 
 
+def _validate_base_name(base_name: str) -> str:
+    cleaned = base_name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="Base name is required.")
+    if any(ch in cleaned for ch in r'<>:"/\|?*'):
+        raise HTTPException(
+            status_code=400,
+            detail="Base name contains invalid filename characters (<>:\"/\\|?*).",
+        )
+    if cleaned.endswith(" ") or cleaned.endswith("."):
+        raise HTTPException(status_code=400, detail="Base name cannot end with a space or period.")
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned
+
+
+def _open_folder_picker() -> str:
+    # Native dialog for local desktop use (works when the server runs on the same machine).
+    try:
+        from tkinter import Tk, filedialog
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError("Tkinter is not available in this Python environment.") from exc
+
+    root = Tk()
+    root.withdraw()
+    try:
+        root.attributes("-topmost", True)
+    except Exception:
+        pass
+    try:
+        selected = filedialog.askdirectory(title="Select folder for PNG renaming")
+    finally:
+        root.destroy()
+    return selected or ""
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -372,3 +408,74 @@ async def download_job_output(batch_id: str, job_id: str) -> FileResponse:
     filename = f"{batch_id}_{job.sequence:03d}_{Path(job.image_filename).stem}.{ext}"
     media_type = f"image/{output_format}"
     return FileResponse(path=output_path, media_type=media_type, filename=filename)
+
+
+@app.post("/api/rename-pngs")
+async def rename_pngs(
+    folder_path: str = Form(...),
+    base_name: str = Form(...),
+) -> dict[str, Any]:
+    target_dir = Path(folder_path.strip()).expanduser()
+    validated_base = _validate_base_name(base_name)
+
+    if not target_dir.exists():
+        raise HTTPException(status_code=400, detail="Folder does not exist.")
+    if not target_dir.is_dir():
+        raise HTTPException(status_code=400, detail="Provided path is not a folder.")
+
+    png_files = sorted(
+        [p for p in target_dir.iterdir() if p.is_file() and p.suffix.lower() == ".png"],
+        key=lambda p: p.name.lower(),
+    )
+    if not png_files:
+        raise HTTPException(status_code=400, detail="No .png files found in the selected folder.")
+
+    planned_names = [f"{validated_base}_{idx}.png" for idx in range(1, len(png_files) + 1)]
+
+    current_set = {p.name for p in png_files}
+    for new_name in planned_names:
+        conflict_path = target_dir / new_name
+        if conflict_path.exists() and new_name not in current_set:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot rename because target file already exists: {new_name}",
+            )
+
+    # Two-phase rename avoids collisions (e.g. a.png -> b.png while b.png also exists in batch).
+    temp_paths: list[Path] = []
+    for source in png_files:
+        temp_name = f".__tmp_rename_{uuid.uuid4().hex}.png"
+        temp_path = target_dir / temp_name
+        source.rename(temp_path)
+        temp_paths.append(temp_path)
+
+    renamed: list[dict[str, str]] = []
+    try:
+        for idx, temp_path in enumerate(temp_paths, start=1):
+            new_name = f"{validated_base}_{idx}.png"
+            final_path = target_dir / new_name
+            original_name = png_files[idx - 1].name
+            temp_path.rename(final_path)
+            renamed.append({"old_name": original_name, "new_name": new_name})
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Rename failed: {exc}") from exc
+
+    return {
+        "folder_path": str(target_dir),
+        "base_name": validated_base,
+        "renamed_count": len(renamed),
+        "files": renamed,
+    }
+
+
+@app.post("/api/select-folder")
+async def select_folder() -> dict[str, str]:
+    try:
+        folder = await asyncio.to_thread(_open_folder_picker)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    if not folder:
+        raise HTTPException(status_code=400, detail="No folder selected.")
+
+    return {"folder_path": folder}

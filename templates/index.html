@@ -14,102 +14,164 @@
     <section class="panel hero">
       <div>
         <p class="eyebrow">MSE_SORA</p>
-        <h1>Bulk-run image generations from image + prompt combinations</h1>
+        <h1>Image Generation + File Renaming Tools</h1>
         <p class="lede">
-          Upload multiple pictures and enter one prompt per line. The app creates the cartesian product:
-          every image runs against every prompt.
+          Use one tab to bulk-generate image variations from prompts, and another tab to rename local PNG files in sequence.
         </p>
       </div>
       <div class="formula">
-        <div>Pictures × Prompts = Jobs</div>
+        <div>Pictures x Prompts = Jobs</div>
         <code>Picture1 + Prompt1, Prompt2, Prompt3 ...</code>
       </div>
     </section>
 
     <section class="panel">
-      <form id="batch-form">
-        <div class="grid">
-          <label class="field field--wide">
-            <span>Pictures</span>
-            <input id="images" name="images" type="file" accept="image/*" multiple required>
-            <small>Select multiple images.</small>
-          </label>
-
-          <label class="field field--wide">
-            <span>Prompts (one per line)</span>
-            <textarea id="prompts_text" name="prompts_text" rows="8" placeholder="Prompt 1&#10;Prompt 2&#10;Prompt 3" required></textarea>
-            <small>Blank lines are ignored.</small>
-          </label>
-
-          <label class="field">
-            <span>Model</span>
-            <input id="model" name="model" type="text" value="{{ default_model }}">
-          </label>
-
-          <label class="field">
-            <span>Size</span>
-            <input id="size" name="size" type="text" value="1024x1024">
-          </label>
-
-          <label class="field">
-            <span>Quality</span>
-            <select id="quality" name="quality">
-              <option value="auto">auto</option>
-              <option value="low">low</option>
-              <option value="medium" selected>medium</option>
-              <option value="high">high</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Output Format</span>
-            <select id="output_format" name="output_format">
-              <option value="png" selected>png</option>
-              <option value="webp">webp</option>
-              <option value="jpeg">jpeg</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Concurrency</span>
-            <input id="concurrency" name="concurrency" type="number" min="1" max="10" step="1" value="1">
-          </label>
-        </div>
-
-        <div class="summary" id="combination-summary">0 pictures × 0 prompts = 0 jobs</div>
-
-        <div class="actions">
-          <button type="submit" id="submit-btn">Run Batch</button>
-          <div id="submit-status" class="muted"></div>
-        </div>
-      </form>
+      <div class="tab-bar" role="tablist" aria-label="Tools">
+        <button type="button" class="tab-btn is-active" data-tab-target="image-generation" role="tab" aria-selected="true">Image Generation</button>
+        <button type="button" class="tab-btn" data-tab-target="file-renaming" role="tab" aria-selected="false">File Renaming</button>
+      </div>
     </section>
 
-    <section class="panel" id="results-panel" hidden>
-      <div class="results-head">
-        <div>
-          <p class="eyebrow">Batch</p>
-          <h2 id="batch-id">-</h2>
-        </div>
-        <div class="counts" id="batch-counts"></div>
-      </div>
+    <section class="tab-panel" data-tab-panel="image-generation">
+      <section class="panel">
+        <form id="batch-form">
+          <div class="grid">
+            <label class="field field--wide">
+              <span>Pictures</span>
+              <input id="images" name="images" type="file" accept="image/*" multiple required>
+              <small>Select multiple images.</small>
+            </label>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Image</th>
-              <th>Prompt</th>
-              <th>Status</th>
-              <th>API Status</th>
-              <th>Preview</th>
-              <th>Output</th>
-            </tr>
-          </thead>
-          <tbody id="jobs-body"></tbody>
-        </table>
-      </div>
+            <div class="field field--wide">
+              <span>Prompts (one per box)</span>
+              <div id="prompt-list" class="prompt-list" aria-live="polite"></div>
+              <input id="prompts_text" name="prompts_text" type="hidden" required>
+              <div class="inline-actions">
+                <button type="button" id="add-prompt-btn" class="secondary-btn">Add Prompt</button>
+              </div>
+              <small>Each prompt box becomes a separate job per uploaded image.</small>
+            </div>
+
+            <label class="field">
+              <span>Model</span>
+              <input id="model" name="model" type="text" value="{{ default_model }}">
+            </label>
+
+            <label class="field">
+              <span>Size</span>
+              <input id="size" name="size" type="text" value="1024x1024">
+            </label>
+
+            <label class="field">
+              <span>Quality</span>
+              <select id="quality" name="quality">
+                <option value="auto">auto</option>
+                <option value="low">low</option>
+                <option value="medium" selected>medium</option>
+                <option value="high">high</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Output Format</span>
+              <select id="output_format" name="output_format">
+                <option value="png" selected>png</option>
+                <option value="webp">webp</option>
+                <option value="jpeg">jpeg</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Concurrency</span>
+              <input id="concurrency" name="concurrency" type="number" min="1" max="10" step="1" value="1">
+            </label>
+          </div>
+
+          <div class="summary" id="combination-summary">0 pictures x 0 prompts = 0 jobs</div>
+
+          <div class="actions">
+            <button type="submit" id="submit-btn">Run Batch</button>
+            <div id="submit-status" class="muted"></div>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="results-panel" hidden>
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">Batch</p>
+            <h2 id="batch-id">-</h2>
+          </div>
+          <div class="counts" id="batch-counts"></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Image</th>
+                <th>Prompt</th>
+                <th>Status</th>
+                <th>API Status</th>
+                <th>Preview</th>
+                <th>Output</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="tab-panel" data-tab-panel="file-renaming" hidden>
+      <section class="panel">
+        <form id="rename-form">
+          <div class="grid rename-grid">
+            <label class="field field--wide">
+              <span>Base Name</span>
+              <input id="rename-base-name" name="base_name" type="text" placeholder="product_image" required>
+              <small>Output format will be `base_name_1.png`, `base_name_2.png`, etc.</small>
+            </label>
+
+            <label class="field field--wide">
+              <span>Select Folder (local path on this computer/server)</span>
+              <input id="rename-folder-path" name="folder_path" type="text" placeholder="C:\\Users\\you\\Pictures\\MyFolder" required>
+              <div class="inline-actions">
+                <button type="button" id="browse-folder-btn" class="secondary-btn">Browse Folder</button>
+              </div>
+              <small>Renames all top-level `.png` files in that folder.</small>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="rename-submit-btn">Rename PNG Files</button>
+            <div id="rename-status" class="muted"></div>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="rename-results-panel" hidden>
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">Rename Result</p>
+            <h2 id="rename-results-title">-</h2>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Old Name</th>
+                <th>New Name</th>
+              </tr>
+            </thead>
+            <tbody id="rename-results-body"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 

@@ -34,7 +34,7 @@ body {
 .panel {
   background: var(--panel);
   border: 1px solid rgba(203, 191, 167, 0.7);
-  border-radius: 18px;
+  border-radius: 0;
   box-shadow: var(--shadow);
   backdrop-filter: blur(7px);
   padding: 1rem;
@@ -70,7 +70,7 @@ h1 {
 .formula {
   border: 1px dashed var(--line);
   background: rgba(255, 255, 255, 0.65);
-  border-radius: 14px;
+  border-radius: 0;
   padding: 0.9rem;
   display: grid;
   gap: 0.5rem;
@@ -82,6 +82,36 @@ h1 {
   color: #11423f;
 }
 
+.tab-bar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+}
+
+.tab-btn.is-active {
+  background: linear-gradient(135deg, #0f766e, #0e9b8f);
+  color: #fff;
+  border-color: transparent;
+}
+
+.tab-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.tab-panel[hidden] {
+  display: none !important;
+}
+
 form {
   display: grid;
   gap: 1rem;
@@ -91,6 +121,10 @@ form {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.85rem;
+}
+
+.rename-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .field {
@@ -112,6 +146,39 @@ form {
   color: var(--muted);
 }
 
+.prompt-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.prompt-row {
+  border: 1px solid rgba(203, 191, 167, 0.7);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 0;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.prompt-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.prompt-index {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 input[type="text"],
 input[type="number"],
 select,
@@ -119,7 +186,7 @@ textarea,
 input[type="file"] {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.75);
   padding: 0.7rem 0.8rem;
   font: inherit;
@@ -147,13 +214,32 @@ textarea {
 
 button {
   border: none;
-  border-radius: 999px;
+  border-radius: 0;
   background: linear-gradient(135deg, #0f766e, #0e9b8f);
   color: white;
   font: inherit;
   font-weight: 700;
   padding: 0.7rem 1.1rem;
   cursor: pointer;
+}
+
+.secondary-btn,
+.tertiary-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.secondary-btn {
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+}
+
+.tertiary-btn {
+  padding: 0.35rem 0.7rem;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
 button:disabled {
@@ -185,7 +271,7 @@ h2 {
 .chip {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.8);
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.35rem 0.65rem;
   font-size: 0.85rem;
 }
@@ -240,14 +326,14 @@ thead th {
   width: 84px;
   height: 84px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 0;
   border: 1px solid rgba(203, 191, 167, 0.7);
   background: rgba(255, 255, 255, 0.9);
 }
 
 .status {
   display: inline-block;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
   border: 1px solid var(--line);
@@ -289,6 +375,10 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .rename-grid {
+    grid-template-columns: 1fr;
+  }
+
   .field--wide {
     grid-column: span 2;
   }
@@ -306,11 +396,15 @@ a {
   }
 
   .panel {
-    border-radius: 14px;
+    border-radius: 0;
     padding: 0.8rem;
   }
 
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rename-grid {
     grid-template-columns: 1fr;
   }
 
